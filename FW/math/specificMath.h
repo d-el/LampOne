@@ -1,0 +1,42 @@
+﻿/*!****************************************************************************
+ * @file    	specificMath.h
+ * @author  	Storozhenko Roman - D_EL
+ * @version 	V1.0
+ * @date    	12-09-2015
+ * @copyright 	The MIT License (MIT). Copyright (c) 2020 Storozhenko Roman
+ */
+#ifndef specificMath_H
+#define specificMath_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*!****************************************************************************
+* Include
+*/
+#include "stdint.h"
+#include "IQmathLib.h"
+
+/*!****************************************************************************
+* Macro functions
+*/
+#define iq_filtr(valOld, valNew, Kfiltr) (((valOld = valOld + (valNew - (valOld >> Kfiltr)))) >> Kfiltr)
+#define IQtoInt(_iqval, _mul)  (int32_t)(((int64_t)_iqval * _mul + _IQ(1)/2) / _IQ(1))
+#define IQNtoInt(_iqval, _mul, N)  (int32_t)(((int64_t)_iqval * _mul + _IQ##N(1)/2) / _IQ##N(1))
+#define IntToIQ(_intval, _mul) (_iq)(((int64_t)_intval * _IQ(1) + _mul/2) / _mul)
+#define IQ14toInt(_iqval, _mul) (int32_t)(((int64_t)_iqval * _mul + _IQ14(1)/2) / _IQ14(1))
+
+/*!****************************************************************************
+* Prototypes for the functions
+*/
+_iq iq_Fy_x1x2y1y2x(_iq x1, _iq x2, _iq y1, _iq y2, _iq x);
+_iq s32iq_Fy_x1x2y1y2x(int32_t x1, int32_t x2, _iq y1, _iq y2, int32_t x);
+int32_t iqs32_Fy_x1x2y1y2x(_iq x1, _iq x2, int32_t y1, int32_t y2, _iq x);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif //specificMath_H
+/******************************** END OF FILE ********************************/

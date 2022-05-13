@@ -1,0 +1,29 @@
+﻿
+text(status, mask,
+	1: m_overheated,
+	2: m_lowInputVoltage
+	)
+
+group(Info, public)
+	p(version_major		,""			,uint16_t	,chmodR		,getFwVer		,0	,0x0000	,0			,0			,65535		,0	,0	,0		,notsave)
+	p(version_minor		,""			,uint16_t	,chmodR		,getFwVer		,1	,0x0001	,0			,0			,65535		,0	,0	,0		,notsave)
+	p(version_patch		,""			,uint16_t	,chmodR		,getFwVer		,2	,0x0002	,0			,0			,65535		,0	,0	,0		,notsave)
+	p(modbus_address	,""			,uint16_t	,chmodRW	,nullptr		,0	,0x0003	,1			,0			,65535		,0	,0	,0		,savesys)
+
+group(Target, public)
+	p(setcurrent		,""			,uint16_t	,chmodRW	,nullptr		,0	,0x0100	,0			,0			,1000		,0	,0	,0		,savesys)
+	p(saveparameters	,""			,uint16_t	,chmodRW	,nullptr		,0	,0x0101	,0			,0			,1			,0	,0	,0		,notsave)
+
+group(State, public)
+	p(current			,"A"		,uint16_t	,chmodR		,nullptr		,0	,0x0200	,0.000		,0.000		,2.000		,0	,0	,3		,notsave)
+	p(power				,"W"		,uint16_t	,chmodR		,nullptr		,0	,0x0201	,0.0		,0.0		,100.0		,0	,0	,1		,notsave)
+	p(input_voltage		,"V"		,uint16_t	,chmodR		,nullptr		,0	,0x0202	,0.0		,0.0		,100.0		,0	,0	,1		,notsave)
+	p(temperature		,"°С"		,uint16_t	,chmodR		,nullptr		,0	,0x0203	,0.0		,0.0		,125.0		,0	,0	,1		,notsave)
+	p(status			,""			,uint16_t	,chmodR		,nullptr		,0	,0x0204	,0			,0			,65535		,0	,0	,0		,notsave)
+
+group(calibration, public)
+	p(с_current			,"A"		,uint16_t	,chmodRW	,setCurrent		,0	,0x0300	,0.617		,0.000		,2.000		,0	,0	,3		,savesys)
+
+group(calibrationp, private)
+	p(adcCurrent		,"lsb"		,uint16_t	,chmodR		,nullptr		,0	,0x0400	,12551		,0			,4095		,0	,0	,0		,savesys)
+	p(enableout			,""			,uint8_t	,chmodRW	,nullptr		,0	,0x0401	,0			,0			,1			,0	,0	,0		,savesys)
