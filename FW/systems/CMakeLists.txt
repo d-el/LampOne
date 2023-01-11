@@ -14,7 +14,7 @@ target_include_directories(systems PUBLIC
 target_link_libraries(systems cmsis drivers freertos)
 
 target_link_options(systems PUBLIC
-	-u __wrap__malloc_r
+	-Wl,--undefined=__wrap__malloc_r
 	-Wl,--wrap,_malloc
 	-Wl,--wrap,_free
 	-Wl,--wrap,_calloc

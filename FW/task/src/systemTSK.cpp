@@ -112,7 +112,7 @@ void systemTSK(void *pPrm){
 		}
 	}
 
-	static MovingAverageFilter<uint16_t, 80> currentTagetFilter(0);
+	static MovingAverageFilter<uint16_t, 120> currentTagetFilter(0);
 	bool bypassFilter = false;
 	bool outen = Prm::enableout.val ? true : false;
 	bool up = btBrightnessIndex == sizeof(brightness2current)/sizeof(brightness2current[0]) - 1 ? false : true;
@@ -203,7 +203,7 @@ void systemTSK(void *pPrm){
 												a.filtered.temperature);
 
 		// Calc Current
-		Prm::current.val = iqs32_Fy_x1x2y1y2x(0, 0, Prm::adcCurrent.val, Prm::с_current.val, a.filtered.iled1);
+		Prm::current.val = iqs32_Fy_x1x2y1y2x(0, 30, Prm::adcCurrent.val, Prm::с_current.val, a.filtered.iled1);
 
 		// Calc target in ADC LSB value
 		uint16_t targetAdcLsb = iqs32_Fy_x1x2y1y2x(0, 0, Prm::с_current.val, Prm::adcCurrent.val, Prm::setcurrent.val);

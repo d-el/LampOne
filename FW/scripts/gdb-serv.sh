@@ -19,15 +19,18 @@ fi
 
 if [ "$1" == "openocd-stlink" ]; then
 	echo "start" $1
-	openocd -f openocd-stlink.cfg
+	openocd -f interface/stlink.cfg -c "transport select hla_swd" -f openocd.cfg
 
 elif [ "$1" == "openocd-jlink" ]; then
 	echo "start" $1
-	openocd -f openocd-jlink.cfg
+	openocd -f interface/jlink.cfg -c "transport select swd" -f openocd.cfg \
+			-c "rtt setup 0x20000410 1024 \"SEGGER RTT\"" \
+			-c "rtt start" \
+			-c "rtt server start 1237 0"
 
 elif [ "$1" == "openocd-mculink" ]; then
 	echo "start" $1
-	openocd -f openocd-mculink.cfg
+	openocd -f interface/cmsis-dap.cfg -c "transport select swd" -f openocd.cfg
 	
 elif [ "$1" == "jlink" ]; then
 	echo "start" $1

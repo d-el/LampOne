@@ -71,7 +71,7 @@ void adc_init(void){
 	ADC1->ISR = ADC_ISR_CCRDY;
 
 	// Set sample time
-	ADC1->SMPR =	1 << ADC_SMPR_SMPSEL4_Pos |
+	ADC1->SMPR =	5 << ADC_SMPR_SMPSEL4_Pos |
 					1 << ADC_SMPR_SMPSEL5_Pos |
 					1 << ADC_SMPR_SMPSEL7_Pos |
 					1 << ADC_SMPR_SMPSEL12_Pos |

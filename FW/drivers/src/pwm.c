@@ -30,7 +30,7 @@ void pwm_init(void){
 	TIM3->CCMR1 |= TIM_CCMR1_OC1PE;							// Output compare preload enable
 	TIM3->CCMR2 |= TIM_CCMR2_OC3M_2 | TIM_CCMR2_OC3M_1;		// PWM mode 1 (NORMAL PWM)
 	TIM3->CCMR2 |= TIM_CCMR2_OC3PE;							// Output compare preload enable
-	TIM3->ARR = 400/*APB1_FREQ / PWM_FREQ*/;						// Auto reload register
+	TIM3->ARR = 500/*APB1_FREQ / PWM_FREQ*/;						// Auto reload register
 	TIM3->CR1 |= TIM_CR1_ARPE;								// TIMx_ARR register is buffered
 	TIM3->CCER |= TIM_CCER_CC1E | TIM_CCER_CC3E;			// CH Output Enable
 	TIM3->CR1 |= TIM_CR1_CEN;								// Counter enable

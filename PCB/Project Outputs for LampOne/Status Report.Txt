@@ -1,0 +1,10 @@
+Output: Bill of Materials
+Type  : BOM
+From  : Project [LampOne.PrjPcb]
+   Generated File[Bill of Materials-LampOne.xlsx]
+
+
+Files Generated   : 1
+Documents Printed : 0
+
+Finished Output Generation At 13:25:55 On 12/2/2022

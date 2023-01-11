@@ -14,7 +14,7 @@
 #include <queue.h>
 #include <semphr.h>
 #include <adc.h>
-#include <arm_math.h>
+#include <pid.h>
 #include <pwm.h>
 #include <gpio.h>
 #include "adcTSK.h"
@@ -31,9 +31,10 @@ static void adcHoock(adcStct_type *adc);
 adcTaskStct_type adcTaskStct;
 SemaphoreHandle_t AdcEndConversionSem;
 adcStct_type adcValue;
-q31_t Kp = 10000;
-q31_t Ki = 1500;
-q31_t Kd = 200;
+
+int32_t Kp = 8000;
+int32_t Ki = 250;
+int32_t Kd = 200;
 
 uint32_t tpwm = 20;
 
@@ -50,7 +51,6 @@ void adcTSK(void *pPrm){
 	xSemaphoreTake(AdcEndConversionSem, portMAX_DELAY);
 
 	adc_setCallback(adcHoock);
-	//aInit();
 	adc_setSampleRate(100);
 	adc_init();
 	adc_startSampling();
@@ -61,11 +61,11 @@ void adcTSK(void *pPrm){
 	static MovingAverageFilter<uint16_t, 32> f_temperature(0);
 	static MovingAverageFilter<uint16_t, 32> f_vref(0);
 
-	arm_pid_instance_q31 pid1 = { .Kp = Kp, .Ki = Ki, .Kd = Kd };
-	arm_pid_init_q31(&pid1, 1);
-
-	constexpr q31_t defaultPidValue = 250;
-	pid1.state[2] = defaultPidValue;
+	uint8_t qn = 22;
+	Pid::PID pidController = Pid::PID(0, Kp, Ki, Kd, qn, Pid::feedbackPositive, Pid::proportionalToError);
+	pidController.init(16, -2144316798);
+	pidController.setOutputMin(0);
+	pidController.setOutputMax(400);
 
 	uint16_t led1targetprev = 0;
 	uint32_t error = 0;
@@ -88,36 +88,19 @@ void adcTSK(void *pPrm){
 			vTaskDelay(10);
 			error = 0;
 			gppin_set(GP_EN1);
-			pid1.state[2] = defaultPidValue;
 		}
 		led1targetprev = a.targetcurrent;
 
 		if(a.targetcurrent > 0 && error == 0){
-			// LED1
-			q31_t setpid = a.targetcurrent << 16;
-			q31_t current = iled1fast << 16;
-			q31_t pwm = arm_pid_q31(&pid1, -(current - setpid));
-
-			pwm = pwm / 128;
-
-			if(pwm < 0){
-				pwm = 0;
-			}
-			if(pwm > 380){
-				pwm = 0;
-				error = 1;
-			}
-			pwm1set(pwm);
+			pidController.setSetpoint(a.targetcurrent);
+			tpwm = pidController.compute(iled1fast);
+			pwm1set(tpwm);
 		}
 
 		// Update PID settings
-		if(pid1.Kp != Kp || pid1.Ki != Ki || pid1.Kd != Kd){
-			pid1.Kp = Kp;
-			pid1.Ki = Ki;
-			pid1.Kd = Kd;
-			arm_pid_init_q31(&pid1, 0);
+		if(pidController.getKp() != Kp || pidController.getKi() != Ki || pidController.getKd() != Kd){
+			pidController.setTunings(Kp, Ki, Kd);
 		}
-
 	}
 }
 

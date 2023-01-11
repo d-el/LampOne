@@ -23,6 +23,7 @@ typedef struct {
 		uint16_t vref;
 	}filtered;
 	uint16_t		targetcurrent;
+	bool 			overload;
 } adcTaskStct_type;
 
 /*!****************************************************************************

@@ -15,5 +15,5 @@ target_include_directories(drivers PUBLIC
 target_link_libraries(drivers cmsis)
 
 target_link_options(drivers PUBLIC
-	"-u DMA1_Channel1_IRQHandler"
+	-Wl,--undefined=DMA1_Channel1_IRQHandler
 	)
