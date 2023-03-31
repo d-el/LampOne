@@ -20,6 +20,7 @@ extern "C" {
 /*!****************************************************************************
 * User define
 */
+typedef void (*pwmUpdateCallback_t)(void);
 
 /*!****************************************************************************
 * Prototypes for the functions
@@ -27,6 +28,7 @@ extern "C" {
 void pwm_init(void);
 void pwm1set(uint16_t ccr);
 void pwm2set(uint16_t ccr);
+void pwm_UpdateCallbackSet(pwmUpdateCallback_t c);
 
 #ifdef __cplusplus
 }

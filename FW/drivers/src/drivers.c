@@ -28,7 +28,6 @@
 void hardInit(void){
 	clock_init();
 	gpio_init();
-	pwm_init();
 }
 
 /******************************** END OF FILE ********************************/

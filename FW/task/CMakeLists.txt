@@ -9,4 +9,4 @@ target_include_directories(task PUBLIC
 	include
 	)
 target_compile_options(task PUBLIC -Wno-missing-field-initializers)
-target_link_libraries(task freertos utils drivers dev systems prmsystem freemodbus math pid-cpp)
+target_link_libraries(task freertos utils drivers dev systems prmsystem freemodbus math)

@@ -26,5 +26,5 @@ group(calibration, public)
 	p(с_current			,"A"		,uint16_t	,chmodRW	,setCurrent		,0	,0x0300	,0.817		,0.000		,2.000		,0	,0	,3		,savesys)
 
 group(calibrationp, private)
-	p(adcCurrent		,"lsb"		,uint16_t	,chmodR		,nullptr		,0	,0x0400	,9302		,0			,4095		,0	,0	,0		,savesys)
+	p(adcCurrent		,"lsb"		,uint16_t	,chmodR		,nullptr		,0	,0x0400	,13602		,0			,4095		,0	,0	,0		,savesys)
 	p(enableout			,""			,uint8_t	,chmodRW	,nullptr		,0	,0x0401	,0			,0			,1			,0	,0	,0		,savesys)
