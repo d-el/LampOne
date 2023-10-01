@@ -22,6 +22,7 @@ typedef struct {
 		uint16_t temperature;
 		uint16_t vref;
 	}filtered;
+	uint16_t iled1offset;
 	uint16_t		targetcurrent;
 	bool 			overload;
 } adcTaskStct_type;

@@ -193,9 +193,10 @@ void systemTSK(void *pPrm){
 		}
 	}
 
-	static MovingAverageFilter<uint16_t, 120> currentTagetFilter(0);
+	//static MovingAverageFilter<uint16_t, 120> currentTagetFilter(0);
 	bool outen = Prm::enableout.val ? true : false;
-	bool up = btBrightnessIndex == sizeof(brightness2current)/sizeof(brightness2current[0]) - 1 ? false : true;
+	bool up = false;
+
 	TickType_t pxPreviousWakeTime = xTaskGetTickCount();
 	while(1){
 		bt_event event = bt_process();
@@ -210,27 +211,43 @@ void systemTSK(void *pPrm){
 		// Brightness
 		static bt_event eventPrev;
 		if(outen){
-			if(eventPrev == BT_LONG_NOW && event != BT_LONG_NOW){
-				up = !up;
+			auto maxIndex = sizeof(brightness2current)/sizeof(brightness2current[0]) - 1;
+
+			if(eventPrev == BT_NONE && event == BT_LONG_NOW){
+				if(btBrightnessIndex == 0){
+					up = true;
+				}else if(btBrightnessIndex == maxIndex){
+					up = false;
+				}
+				else{
+					up = !up;
+				}
+			}
+
+			if((eventPrev == BT_LONG_NOW || eventPrev == BT_DOUBLE) && event == BT_NONE){
 				savePrm();
 			}
 
 			if(event == BT_LONG_NOW){
 				if(up){
-					if(btBrightnessIndex < sizeof(brightness2current)/sizeof(brightness2current[0]) - 1)
+					if(btBrightnessIndex < maxIndex)
 						btBrightnessIndex += 1;
 				}
 				else{
 					if(btBrightnessIndex > 0)
 						btBrightnessIndex -= 1;
 				}
-				Prm::setcurrent.val = brightness2current[btBrightnessIndex];
 			}
 
 			if(event == BT_DOUBLE){
-				Prm::setcurrent.val = brightness2current[sizeof(brightness2current)/sizeof(brightness2current[0]) - 1];
+				if(btBrightnessIndex == maxIndex){
+					btBrightnessIndex = 0;
+				}else{
+					btBrightnessIndex = maxIndex;
+				}
 			}
 
+			Prm::setcurrent.val = brightness2current[btBrightnessIndex];
 			LED_OFF();
 		}else{
 			LED_ON();
@@ -249,7 +266,7 @@ void systemTSK(void *pPrm){
 												1300,						// 130.0 °C
 												a.filtered.temperature);
 
-		int32_t adcoffset = 24;  /* need calibrate offset */
+		int32_t adcoffset = a.iled1offset;  /* need calibrate offset */
 		// Calc Current
 		int32_t current = iqs32_Fy_x1x2y1y2x(adcoffset, 0, Prm::adcCurrent.val, Prm::с_current.val, a.filtered.iled1);
 		Prm::current.val = current < 0 ? 0 : current;
@@ -269,7 +286,7 @@ void systemTSK(void *pPrm){
 			if(termalCompensation > targetAdcLsb) termalCompensation = targetAdcLsb;
 		}
 		uint16_t targetcurrent = outen ? targetAdcLsb - termalCompensation : 0;
-		a.targetcurrent = /*bypassFilter ?*/ targetcurrent/* : outfilter*/;
+		a.targetcurrent = targetcurrent;
 
 		vTaskDelayUntil(&pxPreviousWakeTime, pdMS_TO_TICKS(SYSTEM_TSK_PERIOD));
 	}
