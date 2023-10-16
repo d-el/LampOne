@@ -5,11 +5,11 @@ Lamp appearance. For more photos to /Photo.
 <img alt="First 4 assembly" src="Photo/IMG_0288.jpg">
 <img alt="Connector" src="Photo/IMG_0290.jpg">
 
-## Overview
+## Overview  
   - Dimension (without bracket) 128x150x58 mm  
   - weight (without bracket) 695 g
 
-##LED
+##LED  
 LED Cree CXB2530-0000-000N0HU440G, characteristics at IF = 800 mA, TJ = 85 °C:  
   - CCT 4000K  
   - CRI min 80  
@@ -25,7 +25,7 @@ LED Cree CXB2530-0000-000N0HU440G, characteristics at IF = 800 mA, TJ = 85 °C:
   - output power is linear limited if the input voltage is less than 15.0 V, At 6.0 V maximum output current is 0.3 A  
   - smooth button control from 10 mA to 1 A
 
-##Connection
+##Connection  
   - use 5 pin connector, pinout:
     - 1 (white)  - GND
     - 2 (red)    - Power +6-26V
