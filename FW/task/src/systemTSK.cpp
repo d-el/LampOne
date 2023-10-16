@@ -13,8 +13,6 @@
 #include <FreeRTOS.h>
 #include <task.h>
 #include <semphr.h>
-#include <adc.h>
-#include <pwm.h>
 #include <flash.h>
 #include <board.h>
 #include <prmSystem.h>
@@ -23,11 +21,8 @@
 #include "systemTSK.h"
 #include "modbusTSK.h"
 #include "adcTSK.h"
-#include <arm_math.h>
 #include <linearinterp.h>
 #include <movingAverageFilter.h>
-
-#include <uart.h>
 
 // MCU calibration data
 #define CAL_VREF_DATA	(*(uint16_t*)0x1FFF75AA)	// ADC value VREF_INT at 3.0V VREF
@@ -38,19 +33,27 @@
 * Memory
 */
 extern uint8_t _suser_settings;
-bool flagsave;
 
 static const uint16_t brightness2current[150] = {
-		1,      1,      1,      1,      1,      1,      1,      1,      2,      2,      2,      2,      2,      2,      2,      2,
-		2,      2,      2,      3,      3,      3,      3,      3,      3,      3,      3,      4,      4,      4,      4,      4,
-		5,      5,      5,      5,      5,      6,      6,      6,      7,      7,      7,      8,      8,      8,      9,      9,
-		10,     10,     10,     11,     11,     12,     13,     13,     14,     14,     15,     16,     17,     17,     18,     19,
-		20,     21,     22,     23,     24,     25,     26,     28,     29,     30,     32,     33,     35,     36,     38,     40,
-		42,     44,     46,     48,     50,     52,     55,     58,     60,     63,     66,     69,     72,     76,     79,     83,
-		87,     91,     96,     100,    105,    110,    115,    120,    126,    132,    138,    145,    151,    159,    166,    174,
-		182,    191,    200,    209,    219,    229,    240,    251,    263,    275,    288,    302,    316,    331,    347,    363,
-		380,    398,    417,    437,    457,    479,    501,    525,    550,    576,    603,    631,    661,    692,    725,    759,
-		794,    832,    871,    912,    955,    1000
+	10,		10,		10,		10,		10,		10,		10,		10,
+	11,		11,		11,		11,		11,		11,		11,		11,
+	11,		11,		11,		12,		12,		12,		12,		12,
+	12,		12,		12,		13,		13,		13,		13,		13,
+	14,		14,		14,		14,		14,		15,		15,		15,
+	16,		16,		16,		17,		17,		17,		18,		18,
+	19,		19,		19,		20,		20,		21,		22,		22,
+	23,		23,		24,		25,		26,		26,		27,		28,
+	29,		30,		31,		32,		33,		34,		35,		36,
+	38,		39,		40,		42,		44,		45,		47,		49,
+	50,		52,		54,		57,		59,		61,		64,		66,
+	69,		72,		75,		78,		81,		84,		88,		92,
+	96,		100,	104,	108,	113,	118,	123,	129,
+	134,	140,	146,	153,	159,	167,	174,	182,
+	190,	198,	207,	217,	226,	237,	247,	259,
+	270,	283,	295,	309,	323,	338,	353,	369,
+	386,	404,	423,	442,	463,	484,	506,	530,
+	554,	580,	607,	635,	665,	695,	728,	761,
+	797,	834,	873,	913,	956,	1000
 };
 
 /*!****************************************************************************
@@ -84,13 +87,27 @@ void loadPrm(void){
 /*!****************************************************************************
  * @brief
  */
-void setCurrent(Prm::Val<uint16_t>& prm, bool read, void *arg){
+void saveParameter(Prm::Val<uint16_t>& prm, bool read, void *arg){
+	(void)arg;
+	(void)prm;
+	if(read){
+		return;
+	}
+	savePrm();
+}
+
+
+/*!****************************************************************************
+ * @brief
+ */
+void calibrateCurrent(Prm::Val<uint16_t>& prm, bool read, void *arg){
 	(void)arg;
 	(void)prm;
 	if(read){
 		return;
 	}
 	Prm::adcCurrent.val = adcTaskStct.filtered.iled1;
+	savePrm();
 }
 
 /*!****************************************************************************
@@ -170,6 +187,8 @@ bt_event bt_process(){
 	return BT_NONE;
 }
 
+uint16_t current = 0;
+
 
 /*!****************************************************************************
  * @brief
@@ -183,40 +202,29 @@ void systemTSK(void *pPrm){
 	assert(pdTRUE == xTaskCreate(modbusTSK, "modbusTSK", MODBUS_TSK_SZ_STACK,  NULL, MODBUS_TSK_PRIO, NULL));
 	assert(pdTRUE == xTaskCreate(adcTSK, "adcTSK", ADC_TSK_SZ_STACK, NULL, ADC_TSK_PRIO, NULL));
 
-	uint16_t btBrightnessIndex = 0;
-	for(size_t i = 0; i < sizeof(brightness2current)/sizeof(brightness2current[0]) - 1; i++){
-		if(Prm::setcurrent.val >= brightness2current[i] && Prm::setcurrent.val <= brightness2current[i + 1]){
-			int16_t one = Prm::setcurrent.val - brightness2current[i];
-			int16_t two = brightness2current[i + 1] - Prm::setcurrent.val;
-			btBrightnessIndex = one < two ? i : i + 1;
-			break;
-		}
-	}
-
-	//static MovingAverageFilter<uint16_t, 120> currentTagetFilter(0);
-	bool outen = Prm::enableout.val ? true : false;
 	bool up = false;
+	bool enable = Prm::setcurrent.val != 0;
 
 	TickType_t pxPreviousWakeTime = xTaskGetTickCount();
 	while(1){
+		uint16_t status = Prm::status & Prm::m_lowInputVoltage;
 		bt_event event = bt_process();
-
 		// On/Off
 		if(event == BT_CLICK){
-			outen = !outen;
-			Prm::enableout.val = outen ? 1 : 0;
+			enable = !enable;
+			Prm::setcurrent.val = enable ? brightness2current[Prm::powerindex.val] : 0;
 			savePrm();
 		}
 
 		// Brightness
 		static bt_event eventPrev;
-		if(outen){
+		if(enable){
 			auto maxIndex = sizeof(brightness2current)/sizeof(brightness2current[0]) - 1;
 
 			if(eventPrev == BT_NONE && event == BT_LONG_NOW){
-				if(btBrightnessIndex == 0){
+				if(Prm::powerindex.val == 0){
 					up = true;
-				}else if(btBrightnessIndex == maxIndex){
+				}else if(Prm::powerindex.val == maxIndex){
 					up = false;
 				}
 				else{
@@ -230,29 +238,28 @@ void systemTSK(void *pPrm){
 
 			if(event == BT_LONG_NOW){
 				if(up){
-					if(btBrightnessIndex < maxIndex)
-						btBrightnessIndex += 1;
+					if(Prm::powerindex.val < maxIndex)
+						Prm::powerindex.val += 1;
 				}
 				else{
-					if(btBrightnessIndex > 0)
-						btBrightnessIndex -= 1;
+					if(Prm::powerindex.val > 0)
+						Prm::powerindex.val -= 1;
 				}
+				Prm::setcurrent.val = brightness2current[Prm::powerindex.val];
 			}
 
 			if(event == BT_DOUBLE){
-				if(btBrightnessIndex == maxIndex){
-					btBrightnessIndex = 0;
+				if(Prm::powerindex.val == maxIndex){
+					Prm::powerindex.val = 0;
 				}else{
-					btBrightnessIndex = maxIndex;
+					Prm::powerindex.val = maxIndex;
 				}
+				Prm::setcurrent.val = brightness2current[Prm::powerindex.val];
 			}
-
-			Prm::setcurrent.val = brightness2current[btBrightnessIndex];
-			LED_OFF();
-		}else{
-			LED_ON();
 		}
 		eventPrev = event;
+
+		Prm::setcurrent ? LED_OFF() : LED_ON();
 
 		// Calc ADC Vref
 		uint16_t vref = ((uint32_t)3000 * CAL_VREF_DATA) / a.filtered.vref;
@@ -266,27 +273,56 @@ void systemTSK(void *pPrm){
 												1300,						// 130.0 °C
 												a.filtered.temperature);
 
-		int32_t adcoffset = a.iled1offset;  /* need calibrate offset */
-		// Calc Current
-		int32_t current = iqs32_Fy_x1x2y1y2x(adcoffset, 0, Prm::adcCurrent.val, Prm::с_current.val, a.filtered.iled1);
-		Prm::current.val = current < 0 ? 0 : current;
+		int32_t adcoffset = a.iled1offset;
 
-		// Calc target in ADC LSB value
-		uint16_t targetAdcLsb = iqs32_Fy_x1x2y1y2x(0, 24, Prm::с_current.val, Prm::adcCurrent.val, Prm::setcurrent.val);
+		// Calc measure current
+		int32_t measCurrent = iqs32_Fy_x1x2y1y2x(adcoffset, 0, Prm::adcCurrent.val, Prm::с_current.val, a.filtered.iled1);
+		Prm::current.val = measCurrent < 0 ? 0 : measCurrent;
 
 		// Calc input voltage
 		constexpr int32_t Rh = 100, Rl = 2;
 		Prm::input_voltage.val = (a.filtered.vin * vref * (Rh + Rl)) / (4096 * Rl);
 
+		if(Prm::input_voltage.val < Prm::min_input_voltage.val){
+			status |= Prm::m_lowInputVoltage;
+		}
+		constexpr uint16_t ulvo_hysteresis = 1000;
+		if(Prm::input_voltage.val > Prm::min_input_voltage.val + ulvo_hysteresis){
+			status &= ~Prm::m_lowInputVoltage;
+		}
 		// Termal compensation
 		constexpr int16_t termalThreshpoint = 800; // X_X °C
 		int16_t termalCompensation = 0;
 		if(Prm::temperature.val > termalThreshpoint){
+			status |= Prm::m_overheated;
 			termalCompensation = (Prm::temperature.val - termalThreshpoint) * 50;
-			if(termalCompensation > targetAdcLsb) termalCompensation = targetAdcLsb;
 		}
-		uint16_t targetcurrent = outen ? targetAdcLsb - termalCompensation : 0;
-		a.targetcurrent = targetcurrent;
+
+		// Limit current by input voltage
+		current = Prm::setcurrent.val;
+		constexpr uint16_t voltageThreshold = 15000;
+		if(Prm::input_voltage.val < voltageThreshold){
+			constexpr uint16_t mincurrent = 300;
+			int32_t limcurrent = iqs32_Fy_x1x2y1y2x(7000, mincurrent, voltageThreshold, 1000, Prm::input_voltage.val);
+			if(limcurrent < mincurrent) limcurrent = mincurrent;
+			if(current > limcurrent){
+				current = limcurrent;
+			}
+		}
+
+		// Calc target in ADC LSB value
+		uint16_t targetAdcLsb = iqs32_Fy_x1x2y1y2x(0, adcoffset, Prm::с_current.val, Prm::adcCurrent.val, current);
+
+		if(targetAdcLsb <= termalCompensation ||
+				status & Prm::m_lowInputVoltage ||
+				Prm::setcurrent.val == 0){
+			a.targetcurrent = 0;
+
+		}else{
+			a.targetcurrent = targetAdcLsb - termalCompensation;
+		}
+
+		Prm::status.val = status;
 
 		vTaskDelayUntil(&pxPreviousWakeTime, pdMS_TO_TICKS(SYSTEM_TSK_PERIOD));
 	}

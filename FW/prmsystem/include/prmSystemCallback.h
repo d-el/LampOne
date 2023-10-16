@@ -18,8 +18,9 @@
  * Function declaration
  */
 void getFwVer(Prm::Val<uint16_t>& prm, bool read, void *arg);
-
 void setCurrent(Prm::Val<uint16_t>& prm, bool read, void *arg);
+void saveParameter(Prm::Val<uint16_t>& prm, bool read, void *arg);
+void calibrateCurrent(Prm::Val<uint16_t>& prm, bool read, void *arg);
 
 #endif //prmSystemCallback_H
 

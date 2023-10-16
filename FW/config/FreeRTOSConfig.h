@@ -20,7 +20,7 @@
 #define configUSE_TICKLESS_IDLE                 ( 0 )
 #define configCPU_CLOCK_HZ                      ( 64000000 )
 #define configTICK_RATE_HZ                      ( 1000 )
-#define configMAX_PRIORITIES                    ( 5 )
+#define configMAX_PRIORITIES                    ( 4 )
 #define configMINIMAL_STACK_SIZE                ( 128 )
 #define configMAX_TASK_NAME_LEN                 ( 16 )
 #define configUSE_16_BIT_TICKS                  ( 0 )
@@ -107,11 +107,11 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 /*-------NAME--------------------size [4 byte Word] */
 #define SYSTEM_TSK_SZ_STACK     128
 #define ADC_TSK_SZ_STACK        128
-#define MODBUS_TSK_SZ_STACK       128
+#define MODBUS_TSK_SZ_STACK     128
 /*-------NAME--------------------size [4 byte Word] */
-#define SYSTEM_TSK_PRIO         3
-#define ADC_TSK_PRIO            4
-#define MODBUS_TSK_PRIO           2
+#define SYSTEM_TSK_PRIO         2
+#define ADC_TSK_PRIO            3
+#define MODBUS_TSK_PRIO         3
 
 /* A header file that defines trace macro can be included here. */
 

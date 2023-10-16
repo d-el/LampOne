@@ -101,12 +101,12 @@ private:
 void adcTSK(void *pPrm){
 	(void)pPrm;
 	adcTaskStct_type& a = adcTaskStct;
-	static sigma_delta_modulator<11, 400> modulator;
+	static sigma_delta_modulator<7, 410> modulator;
 	static MovingAverageFilter<uint16_t, 64> f_vin(0);
 	static MovingAverageFilter<uint16_t, 16> f_iled1(0);
 	static MovingAverageFilter<uint16_t, 32> f_temperature(0);
 	static MovingAverageFilter<uint16_t, 32> f_vref(0);
-	PI pi = PI(450, 500, INT32_MAX/10);
+	PI pi = PI(400, 350, INT32_MAX/10);
 
 	static SemaphoreHandle_t AdcEndConversionSem;
 	vSemaphoreCreateBinary(AdcEndConversionSem);
