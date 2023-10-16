@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.6)
 
 PROJECT(LampOne
-	VERSION 0.0.1
+	VERSION 1.0.0
 	LANGUAGES CXX C
 	)
 	

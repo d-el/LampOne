@@ -23,7 +23,7 @@
  * MEMORY
  */
 adcTaskStct_type adcTaskStct;
-uint32_t tpwm, tsigma;
+int32_t tpwm, tsigma;
 
 /*!****************************************************************************
  *
@@ -63,7 +63,7 @@ public:
 
 	int32_t operator()(int32_t ref, int32_t v)
 	{
-		int32_t err = ref - v;
+		int64_t err = ref - v;
 
 		integral += err;
 
@@ -101,12 +101,12 @@ private:
 void adcTSK(void *pPrm){
 	(void)pPrm;
 	adcTaskStct_type& a = adcTaskStct;
-	static sigma_delta_modulator<10, 400> modulator;
+	static sigma_delta_modulator<7, 410> modulator;
 	static MovingAverageFilter<uint16_t, 64> f_vin(0);
-	static MovingAverageFilter<uint16_t, 64> f_iled1(0);
+	static MovingAverageFilter<uint16_t, 16> f_iled1(0);
 	static MovingAverageFilter<uint16_t, 32> f_temperature(0);
 	static MovingAverageFilter<uint16_t, 32> f_vref(0);
-	PI pi = PI(55, 5000, 300000);
+	PI pi = PI(400, 350, INT32_MAX/10);
 
 	static SemaphoreHandle_t AdcEndConversionSem;
 	vSemaphoreCreateBinary(AdcEndConversionSem);
@@ -129,11 +129,12 @@ void adcTSK(void *pPrm){
 	};
 
 	adc_setCallback(adcHoock);
-	adc_setSampleRate(100); // 1 kHz
+	adc_setSampleRate(100);
 	adc_init();
 	adc_startSampling();
 
-	int32_t devider = 32;
+	int32_t devider = 150;
+	int32_t startup = 100;
 
 	while(1){
 		xSemaphoreTake(AdcEndConversionSem, portMAX_DELAY);
@@ -143,9 +144,18 @@ void adcTSK(void *pPrm){
 		a.filtered.temperature = f_temperature.proc(adcValue.adcreg[CH_TEMPERATURE]);
 		a.filtered.vref = f_vref.proc(adcValue.adcreg[CH_VREF]);
 
-		if(--devider == 0){
-			tpwm = pi(a.targetcurrent, a.filtered.iled1);
-			devider = 128;
+		if(startup == 0){
+			if(--devider == 0){
+				tpwm = pi(a.targetcurrent, a.filtered.iled1);
+				devider = 32;
+			}
+		}
+
+		if(startup > 0){
+			startup--;
+		}
+		if(startup == 1){
+			a.iled1offset = a.filtered.iled1;
 		}
 	}
 }
