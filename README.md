@@ -27,8 +27,8 @@ LED Cree CXB2530-0000-000N0HU440G, characteristics at IF = 800 mA, TJ = 85 °C:
 
 ##Connection
   - use 5 pin connector, pinout:
-    - 1. (white)  - GND
-    - 2. (red)    - Power +6-26V
-    - 3. (brown)  - RS485 B
-    - 4. (violet) - RS485 A
-    - 5. (black)  - Switch button
+    - 1 (white)  - GND
+    - 2 (red)    - Power +6-26V
+    - 3 (brown)  - RS485 B
+    - 4 (violet) - RS485 A
+    - 5 (black)  - Switch button
