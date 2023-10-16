@@ -13,7 +13,7 @@ Lamp appearance. For more photos to /Photo.
 LED Cree CXB2530-0000-000N0HU440G, characteristics at IF = 800 mA, TJ = 85 °C:  
   - CCT 4000K  
   - CRI min 80  
-  - Flux 3955  
+  - Flux 3955
 
 ## LED Driver  
   - input voltage: 6 - 26 V, recommended 24 V  
@@ -23,7 +23,7 @@ LED Cree CXB2530-0000-000N0HU440G, characteristics at IF = 800 mA, TJ = 85 °C:
   - RS485 ModBus for calibration and control  
   - output power is limited when temperature is greater than 85 °C  
   - output power is linear limited if the input voltage is less than 15.0 V, At 6.0 V maximum output current is 0.3 A  
-  - smooth button control from 10 mA to 1 A  
+  - smooth button control from 10 mA to 1 A
 
 ##Connection
   - use 5 pin connector, pinout:
