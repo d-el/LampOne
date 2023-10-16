@@ -2,7 +2,7 @@
 
 Lamp appearance. For more photos to /Photo.
 <img alt="Lamp without diffuser" src="Photo/IMG_0287.jpg">
-<img alt="First 4 assembly" src="IMG_0288.jpg">
+<img alt="First 4 assembly" src="Photo/IMG_0288.jpg">
 <img alt="Connector" src="Photo/IMG_0290.jpg">
 
 ## Overview
