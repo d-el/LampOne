@@ -9,7 +9,7 @@ Lamp appearance. For more photos to /Photo.
   - Dimension (without bracket) 128x150x58 mm  
   - weight (without bracket) 695 g
 
-##LED  
+##LED
 LED Cree CXB2530-0000-000N0HU440G, characteristics at IF = 800 mA, TJ = 85 °C:  
   - CCT 4000K  
   - CRI min 80  
