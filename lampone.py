@@ -6,9 +6,9 @@ from pymodbus.client.sync import ModbusSerialClient
 from pymodbus.constants import Endian
 from pymodbus.payload import BinaryPayloadDecoder
 from pymodbus.payload import BinaryPayloadBuilder
-#from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 from pymodbus.compat import iteritems
 from collections import OrderedDict
+from datetime import datetime
 import argparse
 import time
 import csv
@@ -23,7 +23,8 @@ parser.add_argument("--setc", type=int, help="Set current")
 parser.add_argument("--save", help="Save current", action="store_true")
 parser.add_argument("--setminv", type=int, help="Set minimum voltage")
 parser.add_argument("--calc", type=int, help="Calibrate current")
-parser.add_argument("-w", help="Wait", action="store_false")
+parser.add_argument("-g", "--graph", help="Create graph", action="store_true")
+parser.add_argument("-w", help="Wait", action="store_true")
 args = parser.parse_args()
 
 print("connection to {}, address {}".format(args.serial, args.address))
@@ -52,28 +53,75 @@ if args.calc is not None:
 
 v = client.read_holding_registers(0x0000, 4, unit=args.address)
 print("Version {major}.{minor}.{patch}, address {address}".format(major=v.registers[0], minor=v.registers[1], patch=v.registers[2], address=v.registers[3]))
-	
+
+c = client.read_holding_registers(0x0300, 1, unit=args.address)
+print("adcCurrent calibrate {c} mA".format(c=c.registers[0]))
+c = client.read_holding_registers(0x0400, 1, unit=args.address)
+print("adcCurrent calibrate {c} lsb".format(c=c.registers[0]))
+
+# Create CSV
+filename = ""
+if args.graph:
+	filename = str(datetime.today().strftime('%Y-%m-%d')) + ".csv"
+	f = open(filename, 'w')
+	writer = csv.writer(f, delimiter = ",")
+	writer.writerow(["Time", "Current", "Temperature"]) # Write heater
+
 while True:
-	r = client.read_holding_registers(0x0100, 3, unit=args.address)
-	print("Target:\n\t" "setcurrent {setcurrent} mA\n\tmin_input_voltage {minv} mV".format(setcurrent=r.registers[0], minv=r.registers[2]))
+	try:
+		r = client.read_holding_registers(0x0100, 3, unit=args.address)
+		print("Target:\n\t" "setcurrent {setcurrent} mA\n\tmin_input_voltage {minv} mV".format(setcurrent=r.registers[0], minv=r.registers[2]))
 
-	s = client.read_holding_registers(0x200, 5, unit=args.address)
-	stringstatus = ""
-	status = s.registers[4]
-	if status == 0:
-		stringstatus = " ok"
-	if status & 0x01:
-		stringstatus = " overheated"
-	if status & 0x02:
-		stringstatus += " lowInputVoltage"
-	print("State:\n\t" "current {c} mA\n\tinput_voltage {iv} mV\n\ttemperature {t} °C\n\tstatus:{s}".format(
-		c=s.registers[0], p=s.registers[1], iv=s.registers[2], t=s.registers[3] / 10.0, s=stringstatus))
+		s = client.read_holding_registers(0x200, 5, unit=args.address)
+		stringstatus = ""
+		status = s.registers[4]
+		if status == 0:
+			stringstatus = " ok"
+		if status & 0x01:
+			stringstatus = " overheated"
+		if status & 0x02:
+			stringstatus += " lowInputVoltage"
+		
+		current = s.registers[0]
+		inputVoltage = s.registers[2]
+		temperature = s.registers[3] / 10.0
+		
+		print("State:\n\t" "current {c} mA\n\tinput_voltage {iv} mV\n\ttemperature {t} °C\n\tstatus:{s}".format(
+			c=current, iv=inputVoltage, t=temperature, s=stringstatus))
+		
+		if args.graph:		
+			writer.writerow([current, temperature])
+		
+		if args.w is not True:
+			exit(0)
 
-	c = client.read_holding_registers(0x0400, 1, unit=args.address)
-	print("adcCurrent {c} lsb".format(c=c.registers[0]))
+		time.sleep(0.3)
 	
-	if args.w:
-		exit(0)
-	time.sleep(0.3)
+	except KeyboardInterrupt:
+		break
+	except Exception as error:
+		print("An error occurred:", error)
 
+if args.graph:
+	proc = subprocess.Popen(['gnuplot','--persist'], 
+                shell=False,
+                stdin=subprocess.PIPE,
+                )
+
+	proc.stdin.write(b"""
+		set grid
+		set y2tics
+		set yrange [0:1500]
+		set y2range [0:100]
+		set ylabel \'Current\'
+		set y2label \'Temperature\'
+		set datafile separator ','
+		""")
+	proc.stdin.write(str.encode("""
+		plot \
+		\"{file}\" using 1 with lines axis x1y1 title \'Current\',\
+		\"{file}\" using 2 with lines axis x1y2 title \'Temperature\'
+		""".format(file=filename, title="filename")))
+	proc.stdin.write(b"pause -1\n")
+	proc.stdin.close()
 

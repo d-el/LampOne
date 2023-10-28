@@ -1,7 +1,7 @@
 Protel Design System Design Rule Check
 PCB File : D:\Radio\Devices\LampOne\PCB\LampOne.PcbDoc
-Date     : 12/2/2022
-Time     : 13:24:45
+Date     : 10/29/2023
+Time     : 00:11:57
 
 Processing Rule : Clearance Constraint (Gap=0.2mm) (All),(All)
 Rule Violations :0
@@ -45,4 +45,4 @@ Rule Violations :0
 
 Violations Detected : 0
 Waived Violations : 0
-Time Elapsed        : 00:00:02
+Time Elapsed        : 00:00:01
