@@ -34,7 +34,7 @@
 */
 extern uint8_t _suser_settings;
 
-static const uint16_t brightness2current[150] = {
+static const uint16_t brightness2current[] = {
 	10,		10,		10,		10,		10,		10,		10,		10,
 	11,		11,		11,		11,		11,		11,		11,		11,
 	11,		11,		11,		12,		12,		12,		12,		12,
@@ -187,9 +187,6 @@ bt_event bt_process(){
 	return BT_NONE;
 }
 
-uint16_t current = 0;
-
-
 /*!****************************************************************************
  * @brief
  */
@@ -202,8 +199,12 @@ void systemTSK(void *pPrm){
 	assert(pdTRUE == xTaskCreate(modbusTSK, "modbusTSK", MODBUS_TSK_SZ_STACK,  NULL, MODBUS_TSK_PRIO, NULL));
 	assert(pdTRUE == xTaskCreate(adcTSK, "adcTSK", ADC_TSK_SZ_STACK, NULL, ADC_TSK_PRIO, NULL));
 
+	bt_event eventPrev = BT_NONE;
 	bool up = false;
 	bool enable = Prm::setcurrent.val != 0;
+	static MovingAverageFilter<uint16_t, 64> f_ramp(0);
+	bool rampBypass = false;
+	uint16_t current = 0;
 
 	TickType_t pxPreviousWakeTime = xTaskGetTickCount();
 	while(1){
@@ -217,10 +218,8 @@ void systemTSK(void *pPrm){
 		}
 
 		// Brightness
-		static bt_event eventPrev;
 		if(enable){
 			auto maxIndex = sizeof(brightness2current)/sizeof(brightness2current[0]) - 1;
-
 			if(eventPrev == BT_NONE && event == BT_LONG_NOW){
 				if(Prm::powerindex.val == 0){
 					up = true;
@@ -246,6 +245,7 @@ void systemTSK(void *pPrm){
 						Prm::powerindex.val -= 1;
 				}
 				Prm::setcurrent.val = brightness2current[Prm::powerindex.val];
+				rampBypass = true;
 			}
 
 			if(event == BT_DOUBLE){
@@ -260,6 +260,17 @@ void systemTSK(void *pPrm){
 		eventPrev = event;
 
 		Prm::setcurrent ? LED_OFF() : LED_ON();
+
+		// Ramp gen
+		uint16_t ramp_current = f_ramp.proc(Prm::setcurrent.val);
+		if(ramp_current == Prm::setcurrent.val){
+			rampBypass = false;
+		}
+		if(rampBypass){
+			current = Prm::setcurrent.val;
+		}else{
+			current = ramp_current;
+		}
 
 		// Calc ADC Vref
 		uint16_t vref = ((uint32_t)3000 * CAL_VREF_DATA) / a.filtered.vref;
@@ -283,13 +294,14 @@ void systemTSK(void *pPrm){
 		constexpr int32_t Rh = 100, Rl = 2;
 		Prm::input_voltage.val = (a.filtered.vin * vref * (Rh + Rl)) / (4096 * Rl);
 
-		if(Prm::input_voltage.val < Prm::min_input_voltage.val){
+		// ULVO
+		if(Prm::input_voltage.val < Prm::ulvo_voltage.val){
 			status |= Prm::m_lowInputVoltage;
 		}
-		constexpr uint16_t ulvo_hysteresis = 1000;
-		if(Prm::input_voltage.val > Prm::min_input_voltage.val + ulvo_hysteresis){
+		if(Prm::input_voltage.val > Prm::ulvo_voltage.val + Prm::ulvo_hysteresis.val){
 			status &= ~Prm::m_lowInputVoltage;
 		}
+
 		// Termal compensation
 		constexpr int16_t termalThreshpoint = 800; // X_X °C
 		int16_t termalCompensation = 0;
@@ -299,12 +311,12 @@ void systemTSK(void *pPrm){
 		}
 
 		// Limit current by input voltage
-		current = Prm::setcurrent.val;
-		constexpr uint16_t voltageThreshold = 15000;
-		if(Prm::input_voltage.val < voltageThreshold){
-			constexpr uint16_t mincurrent = 300;
-			int32_t limcurrent = iqs32_Fy_x1x2y1y2x(7000, mincurrent, voltageThreshold, 1000, Prm::input_voltage.val);
-			if(limcurrent < mincurrent) limcurrent = mincurrent;
+		if(Prm::input_voltage.val < Prm::voltage_threshold.val){
+			int32_t limcurrent = iqs32_Fy_x1x2y1y2x(
+					Prm::ulvo_voltage.val, Prm::limit_min_current.val,
+					Prm::voltage_threshold.val, Prm::limit_max_current.val,
+					Prm::input_voltage.val);
+			if(limcurrent < Prm::limit_min_current.val) limcurrent = Prm::limit_min_current.val;
 			if(current > limcurrent){
 				current = limcurrent;
 			}
@@ -314,10 +326,9 @@ void systemTSK(void *pPrm){
 		uint16_t targetAdcLsb = iqs32_Fy_x1x2y1y2x(0, adcoffset, Prm::с_current.val, Prm::adcCurrent.val, current);
 
 		if(targetAdcLsb <= termalCompensation ||
-				status & Prm::m_lowInputVoltage ||
-				Prm::setcurrent.val == 0){
+			status & Prm::m_lowInputVoltage ||
+			Prm::setcurrent.val == 0){
 			a.targetcurrent = 0;
-
 		}else{
 			a.targetcurrent = targetAdcLsb - termalCompensation;
 		}

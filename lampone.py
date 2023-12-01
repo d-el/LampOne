@@ -69,9 +69,14 @@ if args.graph:
 
 while True:
 	try:
-		r = client.read_holding_registers(0x0100, 3, unit=args.address)
-		print("Target:\n\t" "setcurrent {setcurrent} mA\n\tmin_input_voltage {minv} mV".format(setcurrent=r.registers[0], minv=r.registers[2]))
-
+		r = client.read_holding_registers(0x0100, 7, unit=args.address)
+		print("Target:\n\t" "setcurrent {} mA".format(r.registers[0]))
+		print("\tulvo_voltage {} mV".format(r.registers[2]))
+		print("\tulvo_hysteresis {} mV".format(r.registers[3]))
+		print("\tvoltage_threshold {} mV".format(r.registers[4]))
+		print("\tlimit_max_current {} mA".format(r.registers[5]))
+		print("\tlimit_min_current {} mA".format(r.registers[6]))
+		
 		s = client.read_holding_registers(0x200, 5, unit=args.address)
 		stringstatus = ""
 		status = s.registers[4]
