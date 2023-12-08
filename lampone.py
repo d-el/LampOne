@@ -2,11 +2,8 @@
 # read and write parameters and calibration
 # ./lampone.py /dev/ttyUSB0 --setc=1000 --save
 
-from pymodbus.client.sync import ModbusSerialClient
-from pymodbus.constants import Endian
-from pymodbus.payload import BinaryPayloadDecoder
-from pymodbus.payload import BinaryPayloadBuilder
-from pymodbus.compat import iteritems
+import pymodbus.client as modbusClient
+from pymodbus import ModbusException
 from collections import OrderedDict
 from datetime import datetime
 import argparse
@@ -28,35 +25,35 @@ parser.add_argument("-w", help="Wait", action="store_true")
 args = parser.parse_args()
 
 print("connection to {}, address {}".format(args.serial, args.address))
-client = ModbusSerialClient(method='rtu', port=args.serial, baudrate=115200, debug=True)
+client = client = modbusClient.ModbusSerialClient(method='rtu', port=args.serial, baudrate=115200, debug=True)
 
 if args.setaddress is not None:
 	print("Set slave {}".format(args.setaddress))
-	client.write_register(0x003, args.setaddress, unit=0)
+	client.write_register(0x003, args.setaddress, slave=0)
 	exit(0)
 
 if args.setc is not None:
 	print("Set current {c} mA".format(c=args.setc))
-	client.write_register(0x0100, args.setc, unit=args.address)
+	client.write_register(0x0100, args.setc, slave=args.address)
 
 if args.save:
 	print("Save current")
-	client.write_register(0x0101, 1, unit=args.address)
+	client.write_register(0x0101, 1, slave=args.address)
 
 if args.setminv is not None:
 	print("Set minimum voltage {c} mV".format(c=args.setminv))
-	client.write_register(0x0102, args.setminv, unit=args.address)
+	client.write_register(0x0102, args.setminv, slave=args.address)
 
 if args.calc is not None:
 	print("Set calibration current {c} mA".format(c=args.calc))
-	client.write_register(0x0300, args.calc, unit=args.address)
+	client.write_register(0x0300, args.calc, slave=args.address)
 
-v = client.read_holding_registers(0x0000, 4, unit=args.address)
+v = client.read_holding_registers(0x0000, 4, slave=args.address)
 print("Version {major}.{minor}.{patch}, address {address}".format(major=v.registers[0], minor=v.registers[1], patch=v.registers[2], address=v.registers[3]))
 
-c = client.read_holding_registers(0x0300, 1, unit=args.address)
+c = client.read_holding_registers(0x0300, 1, slave=args.address)
 print("adcCurrent calibrate {c} mA".format(c=c.registers[0]))
-c = client.read_holding_registers(0x0400, 1, unit=args.address)
+c = client.read_holding_registers(0x0400, 1, slave=args.address)
 print("adcCurrent calibrate {c} lsb".format(c=c.registers[0]))
 
 # Create CSV
@@ -69,7 +66,7 @@ if args.graph:
 
 while True:
 	try:
-		r = client.read_holding_registers(0x0100, 7, unit=args.address)
+		r = client.read_holding_registers(0x0100, 7, slave=args.address)
 		print("Target:\n\t" "setcurrent {} mA".format(r.registers[0]))
 		print("\tulvo_voltage {} mV".format(r.registers[2]))
 		print("\tulvo_hysteresis {} mV".format(r.registers[3]))
@@ -77,7 +74,7 @@ while True:
 		print("\tlimit_max_current {} mA".format(r.registers[5]))
 		print("\tlimit_min_current {} mA".format(r.registers[6]))
 		
-		s = client.read_holding_registers(0x200, 5, unit=args.address)
+		s = client.read_holding_registers(0x200, 5, slave=args.address)
 		stringstatus = ""
 		status = s.registers[4]
 		if status == 0:
@@ -86,6 +83,8 @@ while True:
 			stringstatus = " overheated"
 		if status & 0x02:
 			stringstatus += " lowInputVoltage"
+		if status & 0x04:
+			stringstatus += " m_adcOverflow"
 		
 		current = s.registers[0]
 		inputVoltage = s.registers[2]

@@ -47,10 +47,6 @@ void modbusTSK(void *pPrm){
 	xSemaphoreTake(connUartRxSem, portMAX_DELAY);
 	assert(connUartRxSem != NULL);
 
-//	while(1){
-//		vTaskDelay(5);
-//	}
-
 	uart_init(uart1, 115200);
 	uart_setCallback(connectUart, uartTxHook, uartRxHook);
 	eMBInit(MB_RTU, Prm::modbus_address.val, 0, 115200, MB_PAR_NONE);
@@ -62,7 +58,6 @@ void modbusTSK(void *pPrm){
 		size_t numRx = PIECE_BUF_RX - uartGetRemainRx(connectUart);
 
 		if((numRx != 0)&&(res == pdTRUE)){
-			//LED_ON();
 			mbSlaveSetReceive(connectUart->pRxBff, numRx);
 			if(eMBPoll() == MB_ENOERR){
 				uint8_t txsize = mbSlaveGetTransmit(connectUart->pTxBff);
@@ -71,9 +66,8 @@ void modbusTSK(void *pPrm){
 					uart_write(connectUart, connectUart->pTxBff, txsize);
 					xSemaphoreTake(connUartRxSem, pdMS_TO_TICKS(100));
 				}
-	}
-	//LED_OFF();
-}
+			}
+		}
 	}
 }
 

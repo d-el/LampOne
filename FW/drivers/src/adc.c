@@ -59,7 +59,7 @@ void adc_init(void){
 
 	ADC1->CFGR1 |= ADC_CFGR1_DMACFG;			// DMA circular mode selected
 
-	ADC1->CFGR2 |= ADC_CFGR2_CKMODE_1;			// ADC clock PCLK/4
+	ADC1->CFGR2 |= ADC_CFGR2_CKMODE_1;			// ADC clock PCLK/4, 64/4=16MHz
 
 	// Select channel
 	ADC1->CHSELR |= ADC_CHSELR_CHSEL4 |
@@ -71,17 +71,18 @@ void adc_init(void){
 	ADC1->ISR = ADC_ISR_CCRDY;
 
 	// Set sample time
-	ADC1->SMPR =	5 << ADC_SMPR_SMPSEL4_Pos |
-					1 << ADC_SMPR_SMPSEL5_Pos |
-					1 << ADC_SMPR_SMPSEL7_Pos |
+	ADC1->SMPR =	0 << ADC_SMPR_SMPSEL4_Pos |
+					0 << ADC_SMPR_SMPSEL5_Pos |
+					0 << ADC_SMPR_SMPSEL7_Pos |
 					1 << ADC_SMPR_SMPSEL12_Pos |
 					1 << ADC_SMPR_SMPSEL13_Pos |
-					3 << ADC_SMPR_SMP1_Pos |	// 12.5 ADC clock cycles
-					5 << ADC_SMPR_SMP2_Pos;		// 39.5 ADC clock cycles
+					// 0.25us per 1 clock cycles
+					1 << ADC_SMPR_SMP1_Pos |	// 3.5 ADC clock cycles
+					2 << ADC_SMPR_SMP2_Pos;		// 7.5 ADC clock cycles + 12.5
 
 	ADC1_COMMON->CCR |= ADC_CCR_TSEN;			// Temperature sensor enable
 	ADC1_COMMON->CCR |= ADC_CCR_VREFEN;			// V REFINT enable
-	ADC1_COMMON->CCR |= ADC_CCR_PRESC_1;		// Input ADC clock divided by 4
+	ADC1_COMMON->CCR |= ADC_CCR_PRESC_1;		// Input ADC clock divided by 4, 16/4=4MHz
 
 	ADC1->CR |= /*ADC_CR_ADEN |*/ ADC_CR_ADCAL;	// ADC calibration
 	while((ADC1->ISR & ADC_ISR_EOCAL) == 0);	// Wait for Calibration has completed and the offsets have been updated

@@ -5,19 +5,15 @@
 * @date    		01.05.2016, Storozhenko Roman
 * @copyright 	GNU Public License
 *
-* TIM12_CH1 (PB14)             	-> LED
-* TIM3_CH1 						-> ADC TRIGGER
-* TIM4_CH2 (PA12)			    -> FAN_PWM
+* TIM1 						-> ADC TRIGGER
+* TIM4_CH2 (PA12)			-> FAN_PWM
 *
-* SDADC1_IN4P 					-> UDC_MEAS
-* SDADC1_IN5P 					-> I_MEAS
-* SDADC1_IN6P 					-> U_MEAS
+* ADC1_CH4 					-> UIN_MEAS
+* ADC1_CH5 					-> ILED1
+* ADC1_CH7 					-> ILED2
 *
-* UART3 TX - (PD8)              -> 1Wire
-* UART1 TX - (PA9), RX - (PA10)	-> UART CONNECT
+* UART1 TX/RX - (PB6)		-> UART CONNECT
 *
-* GPIO (PB5) 					-> ON_OFF
-* GPIO (PA0)                    -> CC_CV
 */
 #ifndef board_H
 #define board_H

@@ -1,7 +1,8 @@
 ﻿
 text(status, mask,
 	1: m_overheated,
-	2: m_lowInputVoltage
+	2: m_lowInputVoltage,
+	4: m_adcOverflow
 	)
 
 group(Info, public)
