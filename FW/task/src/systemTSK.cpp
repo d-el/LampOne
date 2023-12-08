@@ -272,6 +272,11 @@ void systemTSK(void *pPrm){
 			current = ramp_current;
 		}
 
+		if(a.filtered.vin == 4095 ||
+			a.filtered.iled1 == 4095*8){
+			status |= Prm::m_adcOverflow;
+		}
+
 		// Calc ADC Vref
 		uint16_t vref = ((uint32_t)3000 * CAL_VREF_DATA) / a.filtered.vref;
 
