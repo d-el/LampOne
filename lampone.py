@@ -11,6 +11,7 @@ import time
 import csv
 import os
 import subprocess
+from colorama import Fore, Back, Style
 
 parser = argparse.ArgumentParser(description="LampOne calibration util")
 parser.add_argument("serial", help="Serial port name")
@@ -18,7 +19,11 @@ parser.add_argument("-a", "--address", type=int, default=1, help="Slave device a
 parser.add_argument("--setaddress", type=int, help="Set device slave address from broadcast")
 parser.add_argument("--setc", type=int, help="Set current")
 parser.add_argument("--save", help="Save current", action="store_true")
-parser.add_argument("--setminv", type=int, help="Set minimum voltage")
+parser.add_argument("--ulvo_voltage", type=int, help="Set ulvo voltage")
+parser.add_argument("--ulvo_hysteresis", type=int, help="Set ulvo hysteresis")
+parser.add_argument("--voltage_threshold", type=int, help="Set voltage_threshold")
+parser.add_argument("--limit_max_current", type=int, help="Set limit_max_current")
+parser.add_argument("--limit_min_current", type=int, help="Set limit_min_current")
 parser.add_argument("--calc", type=int, help="Calibrate current")
 parser.add_argument("-g", "--graph", help="Create graph", action="store_true")
 parser.add_argument("-w", help="Wait", action="store_true")
@@ -27,9 +32,15 @@ args = parser.parse_args()
 print("connection to {}, address {}".format(args.serial, args.address))
 client = client = modbusClient.ModbusSerialClient(method='rtu', port=args.serial, baudrate=115200, debug=True)
 
+def write_register(reg, val, slave_addr):
+	result = client.write_register(reg, val, slave=slave_addr)
+	if result.isError():
+		print(Fore.RED + "Error write reg {:04X} val {}".format(reg, val) + Style.RESET_ALL)
+
 if args.setaddress is not None:
 	print("Set slave {}".format(args.setaddress))
 	client.write_register(0x003, args.setaddress, slave=0)
+	print("Your need reboot device")
 	exit(0)
 
 if args.setc is not None:
@@ -40,9 +51,25 @@ if args.save:
 	print("Save current")
 	client.write_register(0x0101, 1, slave=args.address)
 
-if args.setminv is not None:
-	print("Set minimum voltage {c} mV".format(c=args.setminv))
-	client.write_register(0x0102, args.setminv, slave=args.address)
+if args.ulvo_voltage is not None:
+	print("Set ulvo_voltage {c} mV".format(c=args.ulvo_voltage))
+	write_register(0x0102, args.ulvo_voltage, args.address)
+	
+if args.ulvo_hysteresis is not None:
+	print("Set ulvo_hysteresis {c} mV".format(c=args.ulvo_hysteresis))
+	client.write_register(0x0103, args.ulvo_hysteresis, slave=args.address)
+
+if args.voltage_threshold is not None:
+	print("Set voltage_threshold {c} mV".format(c=args.voltage_threshold))
+	client.write_register(0x0104, args.voltage_threshold, slave=args.address)
+
+if args.limit_max_current is not None:
+	print("Set limit_max_current {c} mV".format(c=args.limit_max_current))
+	client.write_register(0x0105, args.limit_max_current, slave=args.address)
+
+if args.limit_min_current is not None:
+	print("Set limit_min_current {c} mV".format(c=args.limit_min_current))
+	client.write_register(0x0106, args.limit_min_current, slave=args.address)
 
 if args.calc is not None:
 	print("Set calibration current {c} mA".format(c=args.calc))
