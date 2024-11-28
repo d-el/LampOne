@@ -39,17 +39,17 @@ def write_register(reg, val, slave_addr):
 
 if args.setaddress is not None:
 	print("Set slave {}".format(args.setaddress))
-	client.write_register(0x003, args.setaddress, slave=0)
+	write_register(0x003, args.setaddress, slave=0)
 	print("Your need reboot device")
 	exit(0)
 
 if args.setc is not None:
 	print("Set current {c} mA".format(c=args.setc))
-	client.write_register(0x0100, args.setc, slave=args.address)
+	write_register(0x0100, args.setc, slave=args.address)
 
 if args.save:
 	print("Save current")
-	client.write_register(0x0101, 1, slave=args.address)
+	write_register(0x0101, 1, slave=args.address)
 
 if args.ulvo_voltage is not None:
 	print("Set ulvo_voltage {c} mV".format(c=args.ulvo_voltage))
@@ -57,23 +57,23 @@ if args.ulvo_voltage is not None:
 	
 if args.ulvo_hysteresis is not None:
 	print("Set ulvo_hysteresis {c} mV".format(c=args.ulvo_hysteresis))
-	client.write_register(0x0103, args.ulvo_hysteresis, slave=args.address)
+	write_register(0x0103, args.ulvo_hysteresis, slave=args.address)
 
 if args.voltage_threshold is not None:
 	print("Set voltage_threshold {c} mV".format(c=args.voltage_threshold))
-	client.write_register(0x0104, args.voltage_threshold, slave=args.address)
+	write_register(0x0104, args.voltage_threshold, slave=args.address)
 
 if args.limit_max_current is not None:
 	print("Set limit_max_current {c} mV".format(c=args.limit_max_current))
-	client.write_register(0x0105, args.limit_max_current, slave=args.address)
+	write_register(0x0105, args.limit_max_current, slave=args.address)
 
 if args.limit_min_current is not None:
 	print("Set limit_min_current {c} mV".format(c=args.limit_min_current))
-	client.write_register(0x0106, args.limit_min_current, slave=args.address)
+	write_register(0x0106, args.limit_min_current, slave=args.address)
 
 if args.calc is not None:
 	print("Set calibration current {c} mA".format(c=args.calc))
-	client.write_register(0x0300, args.calc, slave=args.address)
+	write_register(0x0300, args.calc, slave=args.address)
 
 v = client.read_holding_registers(0x0000, 4, slave=args.address)
 print("Version {major}.{minor}.{patch}, address {address}".format(major=v.registers[0], minor=v.registers[1], patch=v.registers[2], address=v.registers[3]))

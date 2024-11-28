@@ -1,10 +1,10 @@
 ﻿/*!****************************************************************************
  * @file		uart.c
  * @author		d_el
- * @version		V1.5
- * @date		12.12.2017
- * @brief		Driver for uart STM32F3 MCUs
- * @copyright	The MIT License (MIT). Copyright (c) 2021 Storozhenko Roman
+ * @version		V1.6
+ * @date		29.11.2024
+ * @brief		Driver for uart STM32G0 MCUs
+ * @copyright	The MIT License (MIT). Copyright (c) 2024 Storozhenko Roman
  */
 
 /*!****************************************************************************
@@ -61,8 +61,8 @@ void uart_init(uart_type *uartx, uint32_t baudRate){
 		uartx->pUartRxDmaCh		= DMA1_Channel3;
 		uartx->dmaIfcrTx		= &DMA1->IFCR;
 		uartx->dmaIfcrRx		= &DMA1->IFCR;
-		uartx->dmaIfcrMaskTx	= DMA_IFCR_CTCIF4;
-		uartx->dmaIfcrMaskRx	= DMA_IFCR_CTCIF5;
+		uartx->dmaIfcrMaskTx	= DMA_IFCR_CTCIF2;
+		uartx->dmaIfcrMaskRx	= DMA_IFCR_CTCIF3;
 		uartx->frequency		= APB2_FREQ;
 		uartx->driverEnable		= UART1_DRIVER_ENABLE;
 
@@ -111,21 +111,21 @@ void uart_init(uart_type *uartx, uint32_t baudRate){
 		uartx->pUart			= USART2;
 		uartx->pTxBff			= uart2TxBff;
 		uartx->pRxBff			= uart2RxBff;
-		uartx->pUartTxDmaCh		= DMA1_Channel4;
-		uartx->pUartRxDmaCh		= DMA1_Channel5;
+		uartx->pUartTxDmaCh		= DMA1_Channel7;
+		uartx->pUartRxDmaCh		= DMA1_Channel6;
 		uartx->dmaIfcrTx		= &DMA1->IFCR;
 		uartx->dmaIfcrRx		= &DMA1->IFCR;
-		uartx->dmaIfcrMaskTx	= DMA_IFCR_CTCIF7;
-		uartx->dmaIfcrMaskRx	= DMA_IFCR_CTCIF6;
+		uartx->dmaIfcrMaskTx	= DMA_IFCR_CTCIF4;
+		uartx->dmaIfcrMaskRx	= DMA_IFCR_CTCIF5;
 		uartx->frequency		= APB1_FREQ;
+		uartx->driverEnable		= UART2_DRIVER_ENABLE;
 
 		/************************************************
 		 * IO
 		 */
-		//gppin_init(GPIOB, 3, alternateFunctionPushPull, pullDisable, 0, UART2_PINAFTX);			//PA2 USART2_TX
-		gppin_init(GPIOA, 2, alternateFunctionOpenDrain, pullDisable, 0, UART2_PINAFTX);	//PD8 USART2_TX
+		gppin_init(GPIOA, 2, alternateFunctionPushPull, pullDisable, 0, UART2_PINAFTX);
 		#if(UART2_HALFDUPLEX == 0)
-		gppin_init(GPIOB, 4, alternateFunctionPushPull, pullUp, 0, UART2_PINAFRX);				//PA3 USART2_RX
+		gppin_init(GPIOA, 3, alternateFunctionPushPull, pullUp, 0, UART2_PINAFRX);
 		#else
 		uartx->halfDuplex = 1;
 		#endif
@@ -146,11 +146,64 @@ void uart_init(uart_type *uartx, uint32_t baudRate){
 		/************************************************
 		 * DMA clock
 		 */
-		#if(UART2_DMA_MODE > 0)
 		RCC->AHBENR |= RCC_AHBENR_DMA1EN;
-		#endif
+
+		// DMAMUX
+		DMAMUX1_Channel3->CCR = 53 << DMAMUX_CxCR_DMAREQ_ID_Pos; // USART2_TX
+		DMAMUX1_Channel4->CCR = 52 << DMAMUX_CxCR_DMAREQ_ID_Pos; // USART2_RX
 	}
-		#endif //UART2_USE
+	#endif //UART2_USE
+
+	#if(UART3_USE > 0)
+	if(uartx == uart3){
+		/************************************************
+		 * Memory setting
+		 */
+		uartx->pUart			= USART3;
+		uartx->pTxBff			= uart3TxBff;
+		uartx->pRxBff			= uart3RxBff;
+		uartx->pUartTxDmaCh		= DMA1_Channel6;
+		uartx->pUartRxDmaCh		= DMA1_Channel7;
+		uartx->dmaIfcrTx		= &DMA1->IFCR;
+		uartx->dmaIfcrRx		= &DMA1->IFCR;
+		uartx->dmaIfcrMaskTx	= DMA_IFCR_CTCIF6;
+		uartx->dmaIfcrMaskRx	= DMA_IFCR_CTCIF7;
+		uartx->frequency		= APB1_FREQ;
+		uartx->driverEnable		= UART3_DRIVER_ENABLE;
+
+		/************************************************
+		 * IO
+		 */
+		gppin_init(GPIOB, 8, alternateFunctionOpenDrain, pullDisable, 0, UART3_PINAFTX);
+		#if(UART3_HALFDUPLEX == 0)
+		gppin_init(GPIOB, 9, alternateFunctionPushPull, pullUp, 0, UART3_PINAFRX);
+		#else
+		uartx->halfDuplex = 1;
+		#endif
+
+		/************************************************
+		 * NVIC
+		 */
+		NVIC_EnableIRQ(USART3_4_IRQn);
+		NVIC_SetPriority(USART3_4_IRQn, UART3_TXIRQPrior);
+
+		/************************************************
+		 * USART clock
+		 */
+		RCC->APBENR1 |= RCC_APBENR1_USART3EN;
+		RCC->APBRSTR1 |= RCC_APBRSTR1_USART3RST;
+		RCC->APBRSTR1 &= ~RCC_APBRSTR1_USART3RST;
+
+		/************************************************
+		 * DMA clock
+		 */
+		RCC->AHBENR |= RCC_AHBENR_DMA1EN;
+
+		// DMAMUX
+		DMAMUX1_Channel5->CCR = 55 << DMAMUX_CxCR_DMAREQ_ID_Pos; // USART3_TX
+		DMAMUX1_Channel6->CCR = 54 << DMAMUX_CxCR_DMAREQ_ID_Pos; // USART3_RX
+	}
+	#endif //UART3_USE
 
 	/************************************************
 	 * USART
@@ -240,7 +293,7 @@ void uart_setCallback(uart_type *uartx, uartCallback_type txHoock, uartCallback_
 /*!****************************************************************************
  * @brief
  */
-void uart_write(uart_type *uartx, void *src, uint16_t len){
+void uart_write(uart_type *uartx, const void *src, uint16_t len){
 	uartx->pUart->ICR = USART_ICR_TCCF;
 	uartx->pUartTxDmaCh->CCR &= ~DMA_CCR_EN;									//Channel disabled
 	uartx->pUartTxDmaCh->CMAR = (uint32_t) src;									//Memory address
@@ -253,7 +306,6 @@ void uart_write(uart_type *uartx, void *src, uint16_t len){
  * @brief
  */
 void uart_read(uart_type *uartx, void *dst, uint16_t len){
-	uartx->pUart->ICR = 0xFFFFFFFFU;												//Clear all flags
 	uartx->pUart->RQR = USART_RQR_RXFRQ;
 	uartx->pUartRxDmaCh->CCR &= ~DMA_CCR_EN;									//Channel disabled
 	uartx->pUartRxDmaCh->CMAR = (uint32_t) dst;									//Memory address
@@ -308,19 +360,6 @@ void USART_IRQHandler(uart_type *uartx){
 }
 
 /******************************************************************************
- * Transfer complete interrupt (USART RX)
- */
-void DmaStreamRxIRQHandler(uart_type *uartx){
-	uartx->pUartRxDmaCh->CCR &= ~DMA_CCR_EN;											//Channel disabled
-	uartx->rxCnt++;
-	uartx->rxState = uartRxSuccess;
-	if(uartx->rxHoock != NULL){
-		uartx->rxHoock(uartx);
-	}
-	*uartx->dmaIfcrRx = uartx->dmaIfcrMaskRx;											//Clear flag
-}
-
-/******************************************************************************
  * Transfer complete interrupt USART1_IRQn (USART1 TX and IDLE RX)
  */
 #if (UART1_USE > 0)
@@ -337,5 +376,14 @@ void USART2_IRQHandler(void){
 	USART_IRQHandler(uart2);
 }
 #endif //UART2_USE
+
+/******************************************************************************
+ * Transfer complete interrupt USART3_IRQn (USART3 TX and IDLE RX)
+ */
+#if (UART3_USE > 0)
+void USART3_4_IRQHandler(void){
+	USART_IRQHandler(uart3);
+}
+#endif //UART3_USE
 
 /******************************** END OF FILE ********************************/

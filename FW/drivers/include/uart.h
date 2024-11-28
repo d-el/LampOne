@@ -1,10 +1,10 @@
 ﻿/*!****************************************************************************
  * @file		uart.h
  * @author		d_el
- * @version		V1.5
- * @date		12.12.2017
- * @brief		Driver for uart STM32F3 MCUs
- * @copyright	The MIT License (MIT). Copyright (c) 2021 Storozhenko Roman
+ * @version		V1.6
+ * @date		29.11.2024
+ * @brief		Driver for uart STM32G0 MCUs
+ * @copyright	The MIT License (MIT). Copyright (c) 2024 Storozhenko Roman
  */
 
 #ifndef UART_H
@@ -127,7 +127,7 @@ void uart_init(uart_type *uartx, uint32_t baudRate);
 void uart_deinit(uart_type *uartx);
 void uart_setBaud(uart_type *uartx, uint32_t baudRate);
 void uart_setCallback(uart_type *uartx, uartCallback_type txHoock, uartCallback_type rxHoock);
-void uart_write(uart_type *uartx, void *src, uint16_t len);
+void uart_write(uart_type *uartx, const void *src, uint16_t len);
 void uart_read(uart_type *uartx, void *dst, uint16_t len);
 void uart_stopRead(uart_type *uartStruct);
 
