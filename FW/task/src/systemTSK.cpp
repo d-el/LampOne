@@ -330,8 +330,7 @@ void systemTSK(void *pPrm){
 
 		// Calc target in ADC LSB value
 		uint32_t targetAdcLsb = iqs32_Fy_x1x2y1y2x(0, adcoffset, Prm::с_current.val, Prm::adcCurrent.val, current);
-		if(targetAdcLsb <= termalCompensation ||
-			status & Prm::m_lowInputVoltage ||
+		if(status & Prm::m_lowInputVoltage ||
 			Prm::setcurrent.val == 0){
 			a.targetcurrent = 0;
 		}else{
