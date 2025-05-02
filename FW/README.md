@@ -6,6 +6,7 @@ Firmware of led matrix driver:
    * MCU: STM32G030F  
    * RS485 ModBus  
    * smooth button control  
+   * Temperature compensation  
 
 ## Requirements
 toolchain arm-none-eabi 10.3 or higher  
