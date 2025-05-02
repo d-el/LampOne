@@ -23,7 +23,8 @@ LED Cree CXB2530-0000-000N0HU440G, characteristics at IF = 800 mA, TJ = 85 °C:
   - RS485 ModBus for calibration and control  
   - output power is limited when temperature is greater than 85 °C  
   - output power is linear limited if the input voltage is less than 15.0 V, At 6.0 V maximum output current is 0.3 A  
-  - smooth button control from 10 mA to 1 A
+  - smooth button control from 10 mA to 1 A  
+  - temperature compensation
 
 ## Connection  
   - use 5 pin connector, pinout:
@@ -32,3 +33,8 @@ LED Cree CXB2530-0000-000N0HU440G, characteristics at IF = 800 mA, TJ = 85 °C:
     - 3 (brown)  - RS485 B
     - 4 (violet) - RS485 A
     - 5 (black)  - Switch button
+
+## Temperature compensation
+It works according to the formula: $setpoint = setcurrent * (termalThreshpoint - temperature)^2$  
+The work of compensation on a real hardware is shown below:
+<img alt="Lamp without diffuser" src="Photo/Overheat.png">
