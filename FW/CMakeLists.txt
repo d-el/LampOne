@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.6)
 
 PROJECT(LampOne
-	VERSION 1.0.2
+	VERSION 1.0.3
 	LANGUAGES CXX C
 	)
 	
@@ -66,8 +66,10 @@ target_link_libraries(${PROJECT_NAME}.elf
 
 set(NAME ${PROJECT_NAME}_${PROJECT_VERSION})
 add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
-	BYPRODUCTS ${NAME}.hex
-	COMMAND ${CMAKE_OBJCOPY} -Oihex $<TARGET_FILE:${PROJECT_NAME}.elf> ${NAME}.hex
+	BYPRODUCTS ${PROJECT_NAME}.hex, ${NAME}.hex
+
+	COMMAND ${CMAKE_OBJCOPY} -Oihex $<TARGET_FILE:${PROJECT_NAME}.elf> ${PROJECT_NAME}.hex
+	COMMAND cp -f ${PROJECT_NAME}.hex ${NAME}.hex
 
 	BYPRODUCTS ${NAME}.bin
 	COMMAND ${CMAKE_OBJCOPY} -Obinary $<TARGET_FILE:${PROJECT_NAME}.elf> ${NAME}.bin

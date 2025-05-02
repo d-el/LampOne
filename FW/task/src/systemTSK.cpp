@@ -281,8 +281,8 @@ void systemTSK(void *pPrm){
 		uint16_t vref = ((uint32_t)3000 * CAL_VREF_DATA) / a.filtered.vref;
 
 		// Calc temperature
-		int32_t tsCal = (CAL_TS_DATA * a.filtered.vref) / CAL_VREF_DATA;
-		int32_t y = tsCal + (4095 * TS_LINEARITY * 100) / vref;	// ADC value at 130 °C
+		int32_t tsCal = (CAL_TS_DATA * a.filtered.vref * 8) / CAL_VREF_DATA;
+		int32_t y = tsCal + (4095 * TS_LINEARITY * 100 * 8) / vref;	// ADC value at 130 °C
 		Prm::temperature.val = iqs32_Fy_x1x2y1y2x(	tsCal,
 												300,						// 30.0 °C
 												y,
@@ -308,11 +308,12 @@ void systemTSK(void *pPrm){
 		}
 
 		// Termal compensation
-		constexpr int16_t termalThreshpoint = 800; // X_X °C
-		int16_t termalCompensation = 0;
-		if(Prm::temperature.val > termalThreshpoint){
+		constexpr uint32_t termalCompensationIq = 1<<12;
+		uint32_t termalCompensation = termalCompensationIq;
+		if(Prm::temperature.val > Prm::termalThreshpoint.val){
 			status |= Prm::m_overheated;
-			termalCompensation = (Prm::temperature.val - termalThreshpoint) * 50;
+			termalCompensation = (Prm::termalThreshpoint.val * termalCompensationIq) / Prm::temperature.val;
+			termalCompensation = (termalCompensation * termalCompensation) / termalCompensationIq;
 		}
 
 		// Limit current by input voltage
@@ -328,14 +329,13 @@ void systemTSK(void *pPrm){
 		}
 
 		// Calc target in ADC LSB value
-		uint16_t targetAdcLsb = iqs32_Fy_x1x2y1y2x(0, adcoffset, Prm::с_current.val, Prm::adcCurrent.val, current);
-
+		uint32_t targetAdcLsb = iqs32_Fy_x1x2y1y2x(0, adcoffset, Prm::с_current.val, Prm::adcCurrent.val, current);
 		if(targetAdcLsb <= termalCompensation ||
 			status & Prm::m_lowInputVoltage ||
 			Prm::setcurrent.val == 0){
 			a.targetcurrent = 0;
 		}else{
-			a.targetcurrent = targetAdcLsb - termalCompensation;
+			a.targetcurrent = (targetAdcLsb * termalCompensation) / termalCompensationIq;
 		}
 
 		Prm::status.val = status;

@@ -75,10 +75,10 @@ void adc_init(void){
 					0 << ADC_SMPR_SMPSEL5_Pos |
 					0 << ADC_SMPR_SMPSEL7_Pos |
 					1 << ADC_SMPR_SMPSEL12_Pos |
-					1 << ADC_SMPR_SMPSEL13_Pos |
+					0 << ADC_SMPR_SMPSEL13_Pos |
 					// 0.25us per 1 clock cycles
 					1 << ADC_SMPR_SMP1_Pos |	// 3.5 ADC clock cycles
-					2 << ADC_SMPR_SMP2_Pos;		// 7.5 ADC clock cycles + 12.5
+					6 << ADC_SMPR_SMP2_Pos;		// 79.5 ADC clock cycles
 
 	ADC1_COMMON->CCR |= ADC_CCR_TSEN;			// Temperature sensor enable
 	ADC1_COMMON->CCR |= ADC_CCR_VREFEN;			// V REFINT enable

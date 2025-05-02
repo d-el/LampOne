@@ -104,7 +104,7 @@ void adcTSK(void *pPrm){
 	static sigma_delta_modulator<7, 410> modulator;
 	static MovingAverageFilter<uint16_t, 64> f_vin(0);
 	static MovingAverageFilter<uint16_t, 16> f_iled1(0);
-	static MovingAverageFilter<uint16_t, 32> f_temperature(0);
+	static MovingAverageFilter<uint16_t, 64> f_temperature(0);
 	static MovingAverageFilter<uint16_t, 32> f_vref(0);
 	PI pi = PI(400, 350, INT32_MAX/10);
 
@@ -135,13 +135,17 @@ void adcTSK(void *pPrm){
 
 	int32_t devider = 150;
 	int32_t startup = 100;
+	int16_t temperatureSampleDivider = 0;
 
 	while(1){
 		xSemaphoreTake(AdcEndConversionSem, portMAX_DELAY);
 
 		a.filtered.vin = f_vin.proc(adcValue.adcreg[CH_UINADC]);
 		a.filtered.iled1 = f_iled1.proc(adcValue.adcreg[CH_ILED1] * 8);
-		a.filtered.temperature = f_temperature.proc(adcValue.adcreg[CH_TEMPERATURE]);
+		if(startup == 0 || temperatureSampleDivider++ >= 3000){
+			temperatureSampleDivider = 0;
+			a.filtered.temperature = f_temperature.proc(adcValue.adcreg[CH_TEMPERATURE] * 8);
+		}
 		a.filtered.vref = f_vref.proc(adcValue.adcreg[CH_VREF]);
 
 		if(startup == 0){
