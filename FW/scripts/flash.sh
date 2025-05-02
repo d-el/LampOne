@@ -1,17 +1,8 @@
-#!/bin/bash
+echo "$0"
+hexfile=${HEXFILE:-$(dirname "$0")/../build/LampOne.hex}
+echo "Hex file: ${hexfile}"
 
-# save current dir
-cwd=$(pwd)
-# cd to script dir
-DIR="$(cd "$(dirname "$0")" && pwd)"
-cd $DIR
+debugger=${DEBUGGER:-openocd-jlink}
+echo "Debugger: ${debugger}"
 
-arm-none-eabi-gdb	-ex "target remote localhost:1234" \
-					-ex "monitor reset halt" \
-					-ex "load" \
-					-ex "monitor reset" \
-					-ex "quit" \
-					../build/GClock.elf
-
-# restore current dir
-cd $cwd
+$(dirname "$0")/gdb-serv.sh $debugger -c "reset halt" -c " flash write_image erase $hexfile" -c " flash verify_image $hexfile" -c "reset" -c shutdown
