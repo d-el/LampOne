@@ -30,7 +30,7 @@ parser.add_argument("-w", help="Wait", action="store_true")
 args = parser.parse_args()
 
 print("connection to {}, address {}".format(args.serial, args.address))
-client = client = modbusClient.ModbusSerialClient(method='rtu', port=args.serial, baudrate=115200, debug=True)
+client = client = modbusClient.ModbusSerialClient(port=args.serial, baudrate=115200)
 
 def write_register(reg, val, slave_addr):
 	result = client.write_register(reg, val, slave=slave_addr)
@@ -75,12 +75,12 @@ if args.calc is not None:
 	print("Set calibration current {c} mA".format(c=args.calc))
 	write_register(0x0300, args.calc, slave=args.address)
 
-v = client.read_holding_registers(0x0000, 4, slave=args.address)
+v = client.read_holding_registers(0x0000, count=4, slave=args.address)
 print("Version {major}.{minor}.{patch}, address {address}".format(major=v.registers[0], minor=v.registers[1], patch=v.registers[2], address=v.registers[3]))
 
-c = client.read_holding_registers(0x0300, 1, slave=args.address)
+c = client.read_holding_registers(0x0300, count=1, slave=args.address)
 print("adcCurrent calibrate {c} mA".format(c=c.registers[0]))
-c = client.read_holding_registers(0x0400, 1, slave=args.address)
+c = client.read_holding_registers(0x0400, count=1, slave=args.address)
 print("adcCurrent calibrate {c} lsb".format(c=c.registers[0]))
 
 # Create CSV
@@ -93,15 +93,16 @@ if args.graph:
 
 while True:
 	try:
-		r = client.read_holding_registers(0x0100, 7, slave=args.address)
+		r = client.read_holding_registers(0x0100, count=8, slave=args.address)
 		print("Target:\n\t" "setcurrent {} mA".format(r.registers[0]))
 		print("\tulvo_voltage {} mV".format(r.registers[2]))
 		print("\tulvo_hysteresis {} mV".format(r.registers[3]))
 		print("\tvoltage_threshold {} mV".format(r.registers[4]))
 		print("\tlimit_max_current {} mA".format(r.registers[5]))
 		print("\tlimit_min_current {} mA".format(r.registers[6]))
+		print("\ttermalThreshpoint {} °C".format(r.registers[7]/10.0))
 		
-		s = client.read_holding_registers(0x200, 5, slave=args.address)
+		s = client.read_holding_registers(0x200, count=5, slave=args.address)
 		stringstatus = ""
 		status = s.registers[4]
 		if status == 0:
