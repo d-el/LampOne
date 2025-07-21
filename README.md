@@ -25,6 +25,9 @@ LED Cree CXB2530-0000-000N0HU440G, characteristics at IF = 800 mA, TJ = 85 °C:
   - output power is linear limited if the input voltage is less than 15.0 V, At 6.0 V maximum output current is 0.3 A  
   - smooth button control from 10 mA to 1 A  
   - temperature compensation
+ 
+ Driver schematic:
+ <img alt="Schematic" src="Schematic.png">
 
 ## Connection  
   - use 5 pin connector, pinout:
