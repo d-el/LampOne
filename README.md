@@ -27,7 +27,7 @@ LED Cree CXB2530-0000-000N0HU440G, characteristics at IF = 800 mA, TJ = 85 °C:
   - temperature compensation
  
  Driver schematic:
- <img alt="Schematic" src="Schematic.png">
+ <img alt="Schematic" src="Photo/Schematic.png">
 
 ## Connection  
   - use 5 pin connector, pinout:
